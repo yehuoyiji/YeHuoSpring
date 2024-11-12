@@ -12,5 +12,5 @@ import java.lang.annotation.Target;
 public @interface Component {
 
     // bean的别名
-    String value() default "";
+    String beanName() default "";
 }

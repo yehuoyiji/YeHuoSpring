@@ -11,6 +11,14 @@ public class BeanDefinition {
         this.type = type;
     }
 
+    public String getScope() {
+        return scope;
+    }
+
+    public Class getType() {
+        return type;
+    }
+
     public void setScope(String scope) {
         this.scope = scope;
     }

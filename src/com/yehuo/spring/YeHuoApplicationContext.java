@@ -13,12 +13,13 @@ public class YeHuoApplicationContext {
     private Class configClass;
 
     private ConcurrentHashMap<String, BeanDefinition> BeanDefinitionMap = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Object> singletonObjects = new ConcurrentHashMap<>();
 
     public YeHuoApplicationContext(Class configClass) {
         this.configClass = configClass;
 
 
-        // 扫描配置类的路径，判断是否有componentscan
+        // 扫描配置类的路径，判断是否有componentscan。 扫描 ---> BeanDefinition ---> BeanDefinitionMap
         if (configClass.isAnnotationPresent(ComponentScan.class)) {
             ComponentScan componentScanAnnotation = (ComponentScan) configClass.getAnnotation(ComponentScan.class);
             // 拿到扫描路径
@@ -45,7 +46,7 @@ public class YeHuoApplicationContext {
                                 // BeanDefinition
                                 Component component = clazz.getAnnotation(Component.class);
                                 // bean的名字
-                                String beanName = component.value();
+                                String beanName = component.beanName();
                                 System.out.println(beanName);
                                 BeanDefinition beanDefinition = new BeanDefinition();
                                 beanDefinition.setType(clazz);
@@ -69,9 +70,41 @@ public class YeHuoApplicationContext {
                 }
             }
         }
+
+        // 创建单例bean
+        for (String beanName: BeanDefinitionMap.keySet()) {
+            BeanDefinition beanDefinition = BeanDefinitionMap.get(beanName);
+            if ("Singleton".equals(beanDefinition.getScope())) {
+                Object bean = createBean(beanName, beanDefinition);
+                singletonObjects.put(beanName, bean);
+            }else {
+
+            }
+        }
+    }
+
+    // 创建bean
+    private Object createBean(String beanName, BeanDefinition beanDefinition) {
+        return null;
     }
 
     public Object getBean(String beanName) {
-        return null;
+        BeanDefinition beanDefinition = BeanDefinitionMap.get(beanName);
+        if (beanDefinition == null) {
+            throw new RuntimeException("不存在名称为:" + beanName + "的bean");
+        }else {
+            String scope = beanDefinition.getScope();
+            if ("singleton".equals(scope)) {
+                Object bean = singletonObjects.get(beanName);
+                if (bean == null) {
+                    Object o = createBean(beanName, beanDefinition);
+                    singletonObjects.put(beanName, o);
+                }
+                return bean;
+                // 单例
+            }else {
+                return createBean(beanName, beanDefinition);
+            }
+        }
     }
 }

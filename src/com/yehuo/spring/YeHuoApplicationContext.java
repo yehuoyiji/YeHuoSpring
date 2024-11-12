@@ -1,7 +1,10 @@
 package com.yehuo.spring;
 
+import java.beans.Introspector;
 import java.io.File;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -47,7 +50,9 @@ public class YeHuoApplicationContext {
                                 Component component = clazz.getAnnotation(Component.class);
                                 // bean的名字
                                 String beanName = component.beanName();
-                                System.out.println(beanName);
+                                if (beanName.equals("")) {
+                                    beanName = Introspector.decapitalize(clazz.getSimpleName());
+                                }
                                 BeanDefinition beanDefinition = new BeanDefinition();
                                 beanDefinition.setType(clazz);
                                 if (clazz.isAnnotationPresent(Scope.class)){
@@ -74,18 +79,38 @@ public class YeHuoApplicationContext {
         // 创建单例bean
         for (String beanName: BeanDefinitionMap.keySet()) {
             BeanDefinition beanDefinition = BeanDefinitionMap.get(beanName);
-            if ("Singleton".equals(beanDefinition.getScope())) {
+            if ("singleton".equals(beanDefinition.getScope())) {
                 Object bean = createBean(beanName, beanDefinition);
                 singletonObjects.put(beanName, bean);
-            }else {
-
             }
         }
     }
 
     // 创建bean
     private Object createBean(String beanName, BeanDefinition beanDefinition) {
-        return null;
+        Class clazz = beanDefinition.getType();
+        try {
+            // Bean 生命周期第一步:初始化，通过构造方法创建
+            Object o = clazz.getConstructor().newInstance();
+            // Bean 生命周期第二步:属性赋值
+            for (Field f : clazz.getDeclaredFields()) {
+                if (f.isAnnotationPresent(Autowired.class)) {
+                    // 这样才能赋值
+                    f.setAccessible(true);
+                    // 从userService里的字段找到Autowire后，拿到Autowire注解下面的字段名去单例池拿到对应的bean后进行赋值
+                    f.set(o, getBean(f.getName()));
+                }
+            }
+            return o;
+        } catch (InstantiationException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Object getBean(String beanName) {

@@ -5,11 +5,14 @@ import java.lang.annotation.Annotation;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class YeHuoApplicationContext {
 
     // 用于接收容器创建时的配置类
     private Class configClass;
+
+    private ConcurrentHashMap<String, BeanDefinition> BeanDefinitionMap = new ConcurrentHashMap<>();
 
     public YeHuoApplicationContext(Class configClass) {
         this.configClass = configClass;
@@ -25,7 +28,7 @@ public class YeHuoApplicationContext {
             ClassLoader classLoader = YeHuoApplicationContext.class.getClassLoader();
             URL resource = classLoader.getResource(path);
             File file = new File(resource.getFile()); // D:\YeHuoSpring\out\production\YeHuoSpring\com\yehuo\service
-            System.out.println(file);
+
             if (file.isDirectory()) {
                 File[] files = file.listFiles();
                 for (File f : files) {
@@ -39,7 +42,23 @@ public class YeHuoApplicationContext {
                             Class<?> clazz = classLoader.loadClass(className);
                             // 判断它是否有component 注解,即是否是一个bean
                             if (clazz.isAnnotationPresent(Component.class)) {
-                                //
+                                // BeanDefinition
+                                Component component = clazz.getAnnotation(Component.class);
+                                // bean的名字
+                                String beanName = component.value();
+                                System.out.println(beanName);
+                                BeanDefinition beanDefinition = new BeanDefinition();
+                                beanDefinition.setType(clazz);
+                                if (clazz.isAnnotationPresent(Scope.class)){
+                                    Scope scopeAnnotation = clazz.getAnnotation(Scope.class);
+                                    String scope = scopeAnnotation.value();
+                                    beanDefinition.setScope(scope);
+                                }else {
+                                    beanDefinition.setScope("singleton");
+                                }
+                                BeanDefinitionMap.put(beanName, beanDefinition);
+
+
                             }
                         } catch (ClassNotFoundException e) {
                             throw new RuntimeException(e);

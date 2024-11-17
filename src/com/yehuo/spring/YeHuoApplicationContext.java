@@ -20,8 +20,6 @@ public class YeHuoApplicationContext {
 
     public YeHuoApplicationContext(Class configClass) {
         this.configClass = configClass;
-
-
         // 扫描配置类的路径，判断是否有componentscan。 扫描 ---> BeanDefinition ---> BeanDefinitionMap
         if (configClass.isAnnotationPresent(ComponentScan.class)) {
             ComponentScan componentScanAnnotation = (ComponentScan) configClass.getAnnotation(ComponentScan.class);
@@ -101,6 +99,12 @@ public class YeHuoApplicationContext {
                     f.set(o, getBean(f.getName()));
                 }
             }
+
+            // Aware回调
+            if (o instanceof BeanNameAware) {
+                ((BeanNameAware) o).setBeanName(beanName);
+            }
+
             return o;
         } catch (InstantiationException e) {
             throw new RuntimeException(e);
@@ -113,7 +117,9 @@ public class YeHuoApplicationContext {
         }
     }
 
+    // 从Spring容器中通过Bean的名字去找Bean
     public Object getBean(String beanName) {
+        // 在这一步之前，已经扫描过Bean
         BeanDefinition beanDefinition = BeanDefinitionMap.get(beanName);
         if (beanDefinition == null) {
             throw new RuntimeException("不存在名称为:" + beanName + "的bean");

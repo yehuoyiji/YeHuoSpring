@@ -24,6 +24,6 @@ public class UserService implements BeanNameAware, InitializingBean {
     @Override
     // 初始化方法
     public void afterPropertiesSet() {
-        System.out.println("asdasd");
+
     }
 }

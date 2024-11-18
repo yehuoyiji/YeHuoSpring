@@ -8,6 +8,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class YeHuoApplicationContext {
@@ -17,6 +18,7 @@ public class YeHuoApplicationContext {
 
     private ConcurrentHashMap<String, BeanDefinition> BeanDefinitionMap = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Object> singletonObjects = new ConcurrentHashMap<>();
+    private ArrayList<BeanPostProcessor> BeanPostProcessorList = new ArrayList<>();
 
     public YeHuoApplicationContext(Class configClass) {
         this.configClass = configClass;
@@ -44,6 +46,12 @@ public class YeHuoApplicationContext {
                             Class<?> clazz = classLoader.loadClass(className);
                             // 判断它是否有component 注解,即是否是一个bean
                             if (clazz.isAnnotationPresent(Component.class)) {
+
+                                if (BeanPostProcessor.class.isAssignableFrom(clazz)) {
+                                    Object instance = clazz.newInstance();
+                                    BeanPostProcessorList.add((BeanPostProcessor) instance);
+                                }
+
                                 // BeanDefinition
                                 Component component = clazz.getAnnotation(Component.class);
                                 // bean的名字
@@ -65,6 +73,10 @@ public class YeHuoApplicationContext {
 
                             }
                         } catch (ClassNotFoundException e) {
+                            throw new RuntimeException(e);
+                        } catch (InstantiationException e) {
+                            throw new RuntimeException(e);
+                        } catch (IllegalAccessException e) {
                             throw new RuntimeException(e);
                         }
 
@@ -105,12 +117,21 @@ public class YeHuoApplicationContext {
                 ((BeanNameAware) o).setBeanName(beanName);
             }
 
+            // 初始化前postProcessBeforeInitialization
+            for (BeanPostProcessor beanPostProcessor : BeanPostProcessorList) {
+                beanPostProcessor.postProcessBeforeInitialization(beanName, o);
+            }
+
+
             // 初始化，初始化是告诉Spring执行这个方法，不关心执行的内容
             if (o instanceof InitializingBean) {
                 ((InitializingBean) o).afterPropertiesSet();
             }
 
             // 初始化后 AOP BeanPostProcessor Bean的后置处理器
+            for (BeanPostProcessor beanPostProcessor : BeanPostProcessorList) {
+                beanPostProcessor.postProcessAfterInitialization(beanName, o);
+            }
 
             return o;
         } catch (InstantiationException e) {

@@ -119,7 +119,7 @@ public class YeHuoApplicationContext {
 
             // 初始化前postProcessBeforeInitialization
             for (BeanPostProcessor beanPostProcessor : BeanPostProcessorList) {
-                beanPostProcessor.postProcessBeforeInitialization(beanName, o);
+                o = beanPostProcessor.postProcessBeforeInitialization(beanName, o);
             }
 
 
@@ -130,7 +130,7 @@ public class YeHuoApplicationContext {
 
             // 初始化后 AOP BeanPostProcessor Bean的后置处理器
             for (BeanPostProcessor beanPostProcessor : BeanPostProcessorList) {
-                beanPostProcessor.postProcessAfterInitialization(beanName, o);
+                o = beanPostProcessor.postProcessAfterInitialization(beanName, o);
             }
 
             return o;

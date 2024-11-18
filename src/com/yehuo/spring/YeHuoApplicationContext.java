@@ -100,10 +100,17 @@ public class YeHuoApplicationContext {
                 }
             }
 
-            // Aware回调
+            // Aware回调, 回调是告诉Spring，给你个东西
             if (o instanceof BeanNameAware) {
                 ((BeanNameAware) o).setBeanName(beanName);
             }
+
+            // 初始化，初始化是告诉Spring执行这个方法，不关心执行的内容
+            if (o instanceof InitializingBean) {
+                ((InitializingBean) o).afterPropertiesSet();
+            }
+
+            // 初始化后 AOP BeanPostProcessor Bean的后置处理器
 
             return o;
         } catch (InstantiationException e) {

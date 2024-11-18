@@ -3,9 +3,10 @@ package com.yehuo.service;
 import com.yehuo.spring.Autowired;
 import com.yehuo.spring.BeanNameAware;
 import com.yehuo.spring.Component;
+import com.yehuo.spring.InitializingBean;
 
 @Component(beanName = "userService")
-public class UserService implements BeanNameAware {
+public class UserService implements BeanNameAware, InitializingBean {
 
     @Autowired
     private OrderService orderService;
@@ -18,5 +19,11 @@ public class UserService implements BeanNameAware {
     @Override
     public void setBeanName(String beanName) {
         this.beanName = beanName;
+    }
+
+    @Override
+    // 初始化方法
+    public void afterPropertiesSet() {
+        System.out.println("asdasd");
     }
 }
